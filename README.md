@@ -1,221 +1,173 @@
-# EDUHUB - HỆ THỐNG QUẢN LÝ CÂU LẠC BỘ & SỰ KIỆN SINH VIÊN
-**Môn học:** IN4211 — Phát triển phần mềm hướng đối tượng  
+# EDUHUB — HỆ THỐNG QUẢN LÝ CÂU LẠC BỘ & SỰ KIỆN SINH VIÊN
+**Học phần:** IN4211 — Phát triển phần mềm hướng đối tượng  
 **Giảng viên:** ThS. Nguyễn Tuấn Kiệt  
 **Đơn vị:** Khoa Công nghệ và Kỹ thuật — Trường Đại học Đồng Tháp (DThU)  
 **Bài tập:** CH01 — Phân tích yêu cầu và Domain Modeling EduHub  
 
 ---
 
-## 1. Giới thiệu dự án
-**EduHub** là dự án phần mềm xuyên suốt học kỳ của học phần **IN4211**, nhằm số hóa quy trình quản lý các Câu lạc bộ (CLB) sinh viên và các Sự kiện ngoại khóa tại Trường Đại học Đồng Tháp.
+## 1. Giới thiệu tổng quan
+**EduHub** là dự án phần mềm số hóa quy trình quản lý các Câu lạc bộ (CLB) và Sự kiện ngoại khóa dành cho sinh viên Trường Đại học Đồng Tháp.
 
-Trong **Chương 1**, dự án tập trung vào:
-- Phân tích yêu cầu bài toán thực tế thành các **User Stories** chuẩn mực với các tiêu chí nghiệm thu (**Acceptance Criteria**) dạng `Given/When/Then`.
-- Thiết kế **Sơ đồ lớp sơ bộ (Class Diagram)** mô hình hóa miền bài toán (Domain Model).
-- Hiện thực hóa 5 lớp thực thể (Entities) bằng ngôn ngữ **C# trên nền tảng .NET 10**, tuân thủ nguyên tắc **Đóng gói (Encapsulation)**, bảo vệ toàn vẹn dữ liệu, áp dụng **Static Factory Method `Create()`**, che giấu constructor và không sử dụng public setter thô.
-- Xây dựng ứng dụng **Console Demo** mô phỏng đầy đủ luồng nghiệp vụ từ khởi tạo CLB, thêm thành viên, tạo sự kiện, đăng ký, duyệt xác nhận, điểm danh (Check-in QR) đến xuất báo cáo và xử lý ngoại lệ nghiệp vụ.
+Trong bài tập **Chương 1 (CH01)**, dự án thực hiện:
+- Phân tích 5 User Stories nghiệp vụ cốt lõi gắn liền với các thực thể.
+- Thiết kế Sơ đồ lớp (UML Class Diagram) trực quan hóa quan hệ thực thể, bội số và khóa ngoại.
+- Hiện thực hóa 5 lớp thực thể bằng ngôn ngữ C# (.NET 10) tuân thủ tính đóng gói (Encapsulation), Static Factory Method `Create()`, kiểm tra dữ liệu đầu vào và quản lý trạng thái qua Enum/Hằng số.
+- Xây dựng ứng dụng **Console tương tác (Interactive Console)** cho phép nhập liệu trực tiếp từ bàn phím, tự động đăng ký, duyệt phiếu, điểm danh (Check-in) và xuất bảng báo cáo.
 
 ---
 
-## 2. Cấu trúc thư mục dự án
-Tuân thủ chuẩn cấu trúc dự án quy định trong đề bài:
+## 2. Mô tả thiết kế Domain (Domain Model Design)
+
+### 2.1 Năm thực thể cốt lõi (Domain Entities)
+
+| Thực thể (Class) | Vai trò nghiệp vụ | Các thuộc tính cốt lõi (Properties) | Phương thức hành vi (Behavior) |
+| :--- | :--- | :--- | :--- |
+| **`Club`** | Đại diện cho Câu lạc bộ sinh viên | `Id` (PK), `Name`, `Description`, `CreatedAt`, `Members` (`IReadOnlyList<Member>`) | `AddMember()`, `MemberCount()`, `HasMember()` |
+| **`Member`** | Đại diện cho Sinh viên trong hệ thống | `Id` (PK), `Name`, `Email`, `StudentCode` (MSSV), `JoinedAt`, `Status` (`MemberStatus`) | `IsActive()`, `Deactivate()`, `Activate()` |
+| **`Event`** | Đại diện cho Sự kiện do CLB tổ chức | `Id` (PK), `ClubId` (FK), `Title`, `Date`, `Capacity`, `IsOnline` | `HasCapacity()` |
+| **`Registration`** | Phiếu đăng ký tham dự (bảng nối N-N giữa Member và Event) | `Id` (PK), `MemberId` (FK), `EventId` (FK), `RegisteredAt`, `Status` (`RegistrationStatus`) | `Confirm()`, `Cancel()` |
+| **`CheckIn`** | Bản ghi điểm danh thực tế tại sự kiện (quan hệ 1 - 0..1 với Registration) | `Id` (PK), `RegistrationId` (FK), `CheckedInAt`, `Method` | `Summary()` |
+
+### 2.2 Các quy tắc thiết kế Hướng đối tượng áp dụng
+1. **Encapsulation (Tính đóng gói):**
+   - Tất cả thuộc tính đều dùng `{ get; private set; }`, không dùng public setter thô.
+   - Constructor có phạm vi truy cập `private` để bảo vệ dữ liệu.
+   - Danh sách thành viên trong `Club` được che giấu qua `List<Member> _members` nội bộ và chỉ phơi bày ra ngoài qua giao diện chỉ đọc `IReadOnlyList<Member>`.
+2. **Static Factory Method `Create(...)` & Validation:**
+   - Mọi đối tượng đều được khởi tạo qua phương thức `Create(...)`.
+   - Kiểm tra chặt chẽ dữ liệu đầu vào: Tên/tiêu đề không được để trống, email sinh viên bắt buộc chứa ký tự `'@'`, sức chứa `Capacity > 0`, kiểm tra mã GUID không rỗng.
+3. **Kiểu dữ liệu an toàn & Nullable Reference Types:**
+   - Cấu hình `<Nullable>enable</Nullable>` trong file dự án để ngăn ngừa lỗi Null Reference Exception.
+   - Sử dụng Enum cho trạng thái: `MemberStatus` (Active, Inactive), `RegistrationStatus` (Pending, Confirmed, Cancelled).
+   - Sử dụng lớp hằng số `CheckInMethod` (`QR`, `Manual`) thay vì chuỗi rải rác (magic strings).
+
+### 2.3 Sơ đồ lớp (UML Class Diagram)
+
+Sơ đồ lớp được thiết kế theo đúng chuẩn kỹ thuật UML (trắng đen, phân cấp trực quan):
+
+![Sơ đồ lớp EduHub Ch01](docs/class-diagram.svg)
+
+> Bản vẽ gốc có thể xem và chỉnh sửa tại: [`docs/class-diagram.drawio`](docs/class-diagram.drawio) (mở trên [app.diagrams.net](https://app.diagrams.net) hoặc VS Code extension).
+
+---
+
+## 3. Cấu trúc thư mục dự án
+
 ```text
 EduHub.Ch01/
 ├── Domain/
-│   ├── Member.cs         # Thực thể Sinh viên / Thành viên
-│   ├── Club.cs           # Thực thể Câu lạc bộ
-│   ├── Event.cs          # Thực thể Sự kiện của CLB
-│   ├── Registration.cs   # Thực thể Phiếu đăng ký tham dự sự kiện
-│   └── CheckIn.cs        # Thực thể Bản ghi điểm danh tại sự kiện
+│   ├── Club.cs               # Thực thể Câu lạc bộ
+│   ├── Member.cs             # Thực thể Sinh viên / Thành viên
+│   ├── Event.cs              # Thực thể Sự kiện của CLB
+│   ├── Registration.cs       # Thực thể Phiếu đăng ký tham dự
+│   └── CheckIn.cs            # Thực thể Bản ghi điểm danh (Check-in)
 ├── docs/
-│   ├── user-stories.md   # Danh sách User Stories cho 3 Actor (Sinh viên, Ban CLB, Admin)
-│   └── class-diagram.md  # Sơ đồ lớp Mermaid và phân tích khóa chính, khóa ngoại
-├── Program.cs            # Kịch bản chạy Console demo đầy đủ luồng nghiệp vụ
-├── EduHub.Ch01.csproj    # File cấu hình .NET 10 project (<Nullable>enable</Nullable>)
-└── README.md             # Tài liệu giới thiệu, hướng dẫn sử dụng và kết quả chạy
+│   ├── user-stories.md       # 5 User Stories cốt lõi bám sát thực thể
+│   ├── class-diagram.md      # Tài liệu thuyết minh sơ đồ lớp
+│   ├── class-diagram.drawio  # Tệp thiết kế Draw.io (trắng đen)
+│   └── class-diagram.svg     # Ảnh vector của sơ đồ lớp
+├── Program.cs                # Ứng dụng Console tương tác (cho phép nhập từ bàn phím)
+├── EduHub.Ch01.csproj        # Cấu hình dự án .NET 10 (<Nullable>enable</Nullable>)
+└── README.md                 # Tài liệu hướng dẫn sử dụng và báo cáo kết quả
 ```
 
 ---
 
-## 3. Thiết kế kiến trúc Domain Model (Mô hình hóa nghiệp vụ)
+## 4. Hướng dẫn cách chạy ứng dụng
 
-### 3.1 Năm thực thể cốt lõi (Domain Entities)
-1. **`Member` (Thành viên):**
-   - *Thuộc tính:* `Id` (Guid - PK), `Name`, `Email`, `StudentCode` (MSSV), `JoinedAt`, `Status` (`MemberStatus`: Active/Inactive).
-   - *Đặc điểm:* Constructor `private`. Phương thức tạo `Member.Create(...)` kiểm tra nghiêm ngặt họ tên không được rỗng, email phải chứa `@`, MSSV chuẩn hóa in hoa.
-   - *Hành vi:* `IsActive()`, `Deactivate()`, `Activate()`.
-2. **`Club` (Câu lạc bộ):**
-   - *Thuộc tính:* `Id` (Guid - PK), `Name`, `Description`, `CreatedAt`, `Members` (`IReadOnlyList<Member>`).
-   - *Đặc điểm:* Bảo vệ danh sách thành viên nội bộ `_members`, không cho phép bên ngoài tự do thêm/xóa.
-   - *Hành vi:* `AddMember(Member member)` kiểm tra chặn trùng MSSV/Id và từ chối thành viên Inactive; `MemberCount()`, `HasMember(...)`.
-3. **`Event` (Sự kiện):**
-   - *Thuộc tính:* `Id` (Guid - PK), `ClubId` (Guid - FK liên kết Club), `Title`, `Date`, `Capacity`, `IsOnline`.
-   - *Đặc điểm:* Sức chứa `Capacity` bắt buộc lớn hơn 0, `Title` không được để trống.
-   - *Hành vi:* `HasCapacity(registeredCount)` kiểm tra còn chỗ để tiếp nhận đăng ký mới hay không.
-4. **`Registration` (Phiếu đăng ký):**
-   - *Thuộc tính:* `Id` (Guid - PK), `MemberId` (Guid - FK), `EventId` (Guid - FK), `RegisteredAt`, `Status` (`RegistrationStatus`: Pending, Confirmed, Cancelled).
-   - *Vòng đời (Lifecycle):* Khởi tạo luôn ở trạng thái `Pending`.
-   - *Hành vi:* `Confirm()` (chỉ duyệt khi đang Pending), `Cancel()` (huỷ phiếu khi Pending hoặc Confirmed, không cho phép xác nhận lại phiếu đã huỷ).
-5. **`CheckIn` (Điểm danh):**
-   - *Thuộc tính:* `Id` (Guid - PK), `RegistrationId` (Guid - FK), `CheckedInAt`, `Method` (`CheckInMethod`: QR hoặc Manual).
-   - *Đặc điểm:* Tồn tại quan hệ `1 - 0..1` với Registration.
-   - *Hành vi:* `CheckIn.Create(...)` bắt buộc phiếu đăng ký phải ở trạng thái `Confirmed` mới cho phép tạo lượt điểm danh; cung cấp phương thức `Summary()`.
-
----
-
-## 4. Hướng dẫn cài đặt và chạy ứng dụng
-
-### Yêu cầu hệ thống:
-- Đã cài đặt **.NET 10 SDK** (kiểm tra bằng lệnh: `dotnet --version`).
-- Trình soạn thảo: **Visual Studio Code**, **JetBrains Rider**, hoặc **Visual Studio 2022/2026**.
+### Yêu cầu môi trường:
+- Đã cài đặt **.NET 10 SDK** (kiểm tra bằng lệnh `dotnet --version`).
+- Terminal: Command Prompt, PowerShell, bash hoặc terminal trong VS Code.
 
 ### Các bước thực hiện:
-1. Mở cửa sổ dòng lệnh (Terminal / PowerShell).
-2. Di chuyển vào thư mục dự án:
+1. Mở Terminal và di chuyển vào thư mục dự án:
    ```bash
    cd EduHub.Ch01
    ```
-3. Chạy ứng dụng bằng lệnh:
+
+2. Chạy ứng dụng bằng lệnh:
    ```bash
    dotnet run
    ```
 
+3. **Nhập dữ liệu trực tiếp từ bàn phím:**
+   - **Bước 1:** Nhập tên và mô tả Câu lạc bộ (nhấn Enter nếu muốn dùng mặc định).
+   - **Bước 2:** Nhập số lượng thành viên và thông tin từng sinh viên (Họ tên, Email, MSSV).
+   - **Bước 3:** Nhập thông tin Sự kiện (Tên sự kiện, Sức chứa chỗ ngồi).
+   - **Bước 4:** Hệ thống tự động tạo phiếu đăng ký và duyệt (`Confirm`) cho các thành viên.
+   - **Bước 5:** Lựa chọn phương thức điểm danh (`1` để Quét mã QR, `2` để Điểm danh thủ công).
+   - **Bước 6:** Xem Báo cáo tổng kết tham dự sự kiện dạng bảng chuẩn.
+
 ---
 
-## 5. Kết quả thực thi ứng dụng mẫu (Console Output)
+## 5. Ảnh chụp kết quả chạy thực tế (Console Output)
+
+Dưới đây là kết quả thực thi hoàn chỉnh của ứng dụng khi người dùng nhập dữ liệu tương tác từ bàn phím:
 
 ```text
-================================================================================
-       TRƯỜNG ĐẠI HỌC ĐỒNG THÁP - KHOA CÔNG NGHỆ VÀ KỸ THUẬT
-             IN4211: PHÁT TRIỂN PHẦN MỀM HƯỚNG ĐỐI TƯỢNG
-           BÀI TẬP CH01: DOMAIN MODELING & CONSOLE DEMO (EDUHUB)
-================================================================================
+==========================================================
+      EDUHUB - HỆ THỐNG QUẢN LÝ CÂU LẠC BỘ & SỰ KIỆN     
+==========================================================
 
->>> [BƯỚC 1] Khởi tạo Câu lạc bộ (Club)
-[Thành công] Đã tạo CLB: Tech Club (Mã Id: 948ca24a-251c-43df-ae83-6a9cf186354f)
-            Mô tả: CLB Lập trình & Đổi mới sáng tạo - Trường Đại học Đồng Tháp
---------------------------------------------------------------------------------
+--- [BƯỚC 1] NHẬP THÔNG TIN CÂU LẠC BỘ ---
+Nhập tên CLB: Tech Club
+Nhập mô tả CLB: CLB Lập trình & Đổi mới sáng tạo - DThU
+-> Đã tạo CLB: Tech Club (Mã: 3fad9e47-4a44-40ce-a308-c5fd2c77731e)
 
->>> [BƯỚC 2] Khởi tạo và thêm 3 thành viên (Member) vào CLB
-[Thành công] Đã thêm 3 thành viên vào CLB. Tổng thành viên hiện tại: 3
-  - Nguyễn Văn An | MSSV: DH24001 | Email: an.nguyen@dthu.edu.vn | Trạng thái: Active
-  - Trần Thị Bình | MSSV: DH24002 | Email: binh.tran@dthu.edu.vn | Trạng thái: Active
-  - Lê Hoàng Cường | MSSV: DH24003 | Email: cuong.le@dthu.edu.vn | Trạng thái: Active
---------------------------------------------------------------------------------
+--- [BƯỚC 2] NHẬP THÀNH VIÊN VÀO CLB ---
+Nhập số lượng thành viên muốn thêm: 2
 
->>> [BƯỚC 3] Tạo sự kiện (Event) cho CLB
-[Thành công] Đã tạo sự kiện: Workshop: Lập trình .NET 10 & Clean Architecture
-            CLB tổ chức: Tech Club (ClubId: 948ca24a-251c-43df-ae83-6a9cf186354f)
-            Thời gian: 18/10/2026 21:35 | Sức chứa: 50 chỗ
---------------------------------------------------------------------------------
+Thành viên #1:
+  - Họ và tên: Nguyễn Văn An
+  - Email: an.nguyen@dthu.edu.vn
+  - Mã số sinh viên (MSSV): DH24001
+  -> Đã thêm thành công: Nguyễn Văn An (DH24001)
 
->>> [BƯỚC 4] Đăng ký sự kiện (Registration) và duyệt xác nhận (Confirm)
-[Tạo phiếu #1] Sinh viên Nguyễn Văn An gửi đăng ký -> Trạng thái ban đầu: Pending
-              Ban tổ chức duyệt -> Trạng thái mới: Confirmed
-[Tạo phiếu #2] Sinh viên Trần Thị Bình gửi đăng ký -> Trạng thái ban đầu: Pending
-              Ban tổ chức duyệt -> Trạng thái mới: Confirmed
-[Thống kê đăng ký] Đã xác nhận thành công 2 phiếu đăng ký.
---------------------------------------------------------------------------------
+Thành viên #2:
+  - Họ và tên: Trần Thị Bình
+  - Email: binh.tran@dthu.edu.vn
+  - Mã số sinh viên (MSSV): DH24002
+  -> Đã thêm thành công: Trần Thị Bình (DH24002)
 
->>> [BƯỚC 5] Thực hiện Check-in điểm danh tại bàn tiếp đón
-[Điểm danh thành công] Sinh viên: Nguyễn Văn An (DH24001)
-                     [CheckIn #df12903b] Đã điểm danh lúc 21:35:12 11/10/2026 qua phương thức [QR] (Phiếu #7bc34e01)
---------------------------------------------------------------------------------
+--- [BƯỚC 3] TẠO SỰ KIỆN MỚI CHO CLB ---
+Nhập tên sự kiện: Workshop Lập trình C# hướng đối tượng
+Nhập sức chứa tối đa (Capacity): 50
+-> Đã tạo sự kiện: Workshop Lập trình C# hướng đối tượng | Sức chứa: 50 chỗ
 
->>> [BƯỚC 6] Báo cáo tổng kết tham dự sự kiện
-================================================================================
-  BÁO CÁO THAM DỰ SỰ KIỆN: WORKSHOP: LẬP TRÌNH .NET 10 & CLEAN ARCHITECTURE
-  Đơn vị tổ chức: Tech Club | Sức chứa: 50 sinh viên
-  Tổng số đăng ký hợp lệ: 2 | Tổng số đã check-in: 1
-================================================================================
-MSSV         | Họ và Tên            | Trạng thái phiếu | Tình trạng điểm danh
---------------------------------------------------------------------------------
-DH24001      | Nguyễn Văn An        | Confirmed       | [x] ĐÃ CHECK-IN (QR)
-DH24002      | Trần Thị Bình        | Confirmed       | [ ] CHƯA CHECK-IN   
-================================================================================
+--- [BƯỚC 4] ĐĂNG KÝ THAM GIA SỰ KIỆN ---
+-> Sinh viên Nguyễn Văn An (DH24001) đã đăng ký thành công [Trạng thái: Confirmed]
+-> Sinh viên Trần Thị Bình (DH24002) đã đăng ký thành công [Trạng thái: Confirmed]
 
->>> [BƯỚC 7 & 8] Kiểm tra cơ chế tự bảo vệ luật nghiệp vụ (Encapsulation / Business Rules)
+--- [BƯỚC 5] ĐIỂM DANH SỰ KIỆN (CHECK-IN) ---
+Tiến hành điểm danh cho: Nguyễn Văn An (DH24001)
+Chọn phương thức (1. Quét mã QR, 2. Thủ công) [Mặc định 1]: 1
+-> [CheckIn #c11d01ed] Lúc 16:39:52 12/10/2026 qua [QR] (Phiếu #72a2a9e2)
 
-[Thử nghiệm 1] Cố tình thêm lại sinh viên đã có trong CLB (chặn trùng):
-  --> [BẮT NGOẠI LỆ THÀNH CÔNG]: Sinh viên 'Nguyễn Văn An' (MSSV: DH24001) đã là thành viên của CLB Tech Club.
-
-[Thử nghiệm 2] Thử xác nhận lại một phiếu đăng ký đã bị huỷ (Cancelled):
-  Tạo phiếu cho Lê Hoàng Cường -> Status: Pending
-  Đã gọi Cancel() -> Status: Cancelled
-  --> [BẮT NGOẠI LỆ THÀNH CÔNG]: Không thể xác nhận phiếu đăng ký đang ở trạng thái Cancelled.
-
-[Thử nghiệm 3] Cố tình check-in một phiếu đang ở trạng thái Pending:
-  --> [BẮT NGOẠI LỆ THÀNH CÔNG]: Chỉ phiếu đăng ký đã xác nhận (Confirmed) mới được phép check-in. Phiếu hiện tại đang ở trạng thái: Pending.
-
-[Thử nghiệm 4] Tạo Member với email không chứa '@':
-  --> [BẮT NGOẠI LỆ THÀNH CÔNG]: Email không hợp lệ (phải chứa ký tự '@'). (Parameter 'email')
-
-================================================================================
-    HOÀN TẤT DEMO 100% CÁC BƯỚC NGHIỆP VỤ VÀ LUẬT TOÀN VẸN DỮ LIỆU!
-================================================================================
+==========================================================
+   BÁO CÁO THAM DỰ SỰ KIỆN: WORKSHOP LẬP TRÌNH C# HƯỚNG ĐỐI TƯỢNG
+   Đơn vị: Tech Club | Sức chứa: 50 chỗ
+   Số đăng ký: 2 | Đã check-in: 1
+==========================================================
+MSSV       | Họ tên             | Trạng thái   | Điểm danh
+----------------------------------------------------------
+DH24001    | Nguyễn Văn An      | Confirmed    | Đã check-in (QR)
+DH24002    | Trần Thị Bình      | Confirmed    | Chưa check-in
+==========================================================
+Chương trình hoàn tất!
 ```
 
 ---
 
-## 6. Hướng dẫn quy trình Git và nộp bài Pull Request
+## 6. Lịch sử Commit theo chuẩn Conventional Commits
 
-Để đạt trọn vẹn 10 điểm phần **Nhiệm vụ 5 (Git và PR)**, hãy thực hiện theo đúng các bước sau:
+Dự án được phân chia thành các commit rõ ràng trên nhánh bài tập `ch01/DH24001`:
 
-### Bước 1: Khởi tạo Git và chuyển sang nhánh riêng
-```bash
-git init
-git switch -c ch01/<MSSV_CỦA_BẠN>
-# Ví dụ: git switch -c ch01/DH24001
-```
-
-### Bước 2: Tạo các commit theo chuẩn Conventional Commits
-**Commit 1: Thêm tài liệu phân tích và sơ đồ lớp**
-```bash
-git add docs/
-git commit -m "docs: add user stories and class diagram for EduHub domain"
-```
-
-**Commit 2: Hiện thực các Domain Entities tuân thủ Encapsulation**
-```bash
-git add Domain/ EduHub.Ch01.csproj
-git commit -m "feat(domain): implement core domain entities with encapsulation"
-```
-
-**Commit 3: Hoàn thành Console Demo và kiểm thử nghiệp vụ**
-```bash
-git add Program.cs
-git commit -m "feat(demo): implement console application workflow demo"
-```
-
-**Commit 4: Bổ sung tài liệu README**
-```bash
-git add README.md
-git commit -m "docs: add comprehensive README with execution guide and screenshots"
-```
-
-### Bước 3: Đẩy nhánh lên kho GitHub cá nhân
-```bash
-git remote add origin https://github.com/<tai-khoan-github-cua-ban>/eduhub.git
-git push -u origin ch01/<MSSV_CỦA_BẠN>
-```
-
-### Bước 4: Mở Pull Request về `main`
-- **Tiêu đề PR:** `feat(domain): complete chapter 01 domain modeling and console demo`
-- **Người đánh giá (Reviewers):** Tag tài khoản GitHub của giảng viên (ThS. Nguyễn Tuấn Kiệt).
-- **Nội dung mô tả (PR Description template):**
-  ```markdown
-  ### What (Nội dung thay đổi)
-  - Phân tích 7 User Stories chi tiết với tiêu chí nghiệm thu Given/When/Then cho 3 nhóm vai trò (Sinh viên, Ban CLB, Admin).
-  - Thiết kế sơ đồ lớp sơ bộ (Class Diagram) bằng cú pháp Mermaid trong docs/class-diagram.md.
-  - Hiện thực hóa 5 Domain Entities (Member, Club, Event, Registration, CheckIn) trong thư mục Domain/ theo đúng nguyên tắc Encapsulation (.NET 10).
-  - Xây dựng kịch bản Console Demo hoàn chỉnh (Program.cs) qua 8 bước nghiệp vụ, có xuất báo cáo trực quan và kiểm thử vi phạm ràng buộc dữ liệu.
-
-  ### Why (Lý do thực hiện)
-  - Hoàn thành bài tập Chương 1 (HĐ1.3) học phần IN4211 - Phát triển phần mềm hướng đối tượng.
-  - Đáp ứng chuẩn đầu ra CLO1, CLO4 và CLO5.
-
-  ### How to test (Cách kiểm tra)
-  1. Kiểm tra mã nguồn trong nhánh `ch01/<MSSV>`.
-  2. Mở terminal tại thư mục EduHub.Ch01 và chạy lệnh: `dotnet run`
-  3. Quan sát kết quả hiển thị trên màn hình console khớp 100% với kịch bản yêu cầu.
-  ```
+1. `refactor(domain): enforce encapsulation, factory methods, and business validation`
+   - Đóng gói 5 thực thể, áp dụng static factory `Create()`, kiểm tra dữ liệu đầu vào.
+2. `feat(demo): update console workflow demo to use factory methods and user input`
+   - Viết lại `Program.cs` hỗ trợ người dùng nhập trực tiếp từ bàn phím và in báo cáo.
+3. `docs: update user stories, class diagram, and drawio visual specifications`
+   - Bổ sung tài liệu phân tích nghiệp vụ và bản vẽ sơ đồ lớp chuẩn UML.
+4. `docs: update README with domain design, execution guide, and output logs`
+   - Cập nhật toàn diện file README.md với đầy đủ hướng dẫn thực thi và minh họa kết quả.

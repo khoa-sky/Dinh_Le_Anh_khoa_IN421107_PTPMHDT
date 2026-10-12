@@ -3,102 +3,116 @@ using EduHub.Ch01.Domain;
 
 Console.OutputEncoding = Encoding.UTF8;
 
-Console.WriteLine("=== CHƯƠNG TRÌNH QUẢN LÝ CÂU LẠC BỘ & SỰ KIỆN (EDUHUB) ===\n");
+Console.WriteLine("==========================================================");
+Console.WriteLine("      EDUHUB - HỆ THỐNG QUẢN LÝ CÂU LẠC BỘ & SỰ KIỆN     ");
+Console.WriteLine("==========================================================\n");
 
-// [US01] Khởi tạo Câu lạc bộ thông qua Factory method
-var club = Club.Create("Tech Club", "CLB Lập trình & Đổi mới sáng tạo - ĐH Đồng Tháp");
-Console.WriteLine($"[US01] Đã tạo CLB: {club.Name} (Mã Id: {club.Id})");
+// 1. Nhập thông tin Câu lạc bộ
+Console.WriteLine("--- [BƯỚC 1] NHẬP THÔNG TIN CÂU LẠC BỘ ---");
+Console.Write("Nhập tên CLB: ");
+string clubName = Console.ReadLine()?.Trim() ?? "";
+if (string.IsNullOrWhiteSpace(clubName)) clubName = "Tech Club";
 
-// [US02] Khởi tạo các Thành viên với dữ liệu được kiểm tra hợp lệ
-var m1 = Member.Create("Nguyễn Văn An", "an.nguyen@dthu.edu.vn", "DH24001");
-var m2 = Member.Create("Trần Thị Bình", "binh.tran@dthu.edu.vn", "DH24002");
-var m3 = Member.Create("Lê Hoàng Cường", "cuong.le@dthu.edu.vn", "DH24003");
+Console.Write("Nhập mô tả CLB: ");
+string clubDesc = Console.ReadLine()?.Trim() ?? "";
+if (string.IsNullOrWhiteSpace(clubDesc)) clubDesc = "CLB Lập trình & Đổi mới sáng tạo - DThU";
 
-club.AddMember(m1);
-club.AddMember(m2);
-club.AddMember(m3);
+var club = Club.Create(clubName, clubDesc);
+Console.WriteLine($"-> Đã tạo CLB: {club.Name} (Mã: {club.Id})\n");
 
-Console.WriteLine($"[US01/US02] Đã thêm {club.MemberCount()} thành viên vào CLB:");
-foreach (var m in club.Members)
+// 2. Nhập danh sách thành viên
+Console.WriteLine("--- [BƯỚC 2] NHẬP THÀNH VIÊN VÀO CLB ---");
+Console.Write("Nhập số lượng thành viên muốn thêm: ");
+if (!int.TryParse(Console.ReadLine(), out int memberCount) || memberCount <= 0)
 {
-    Console.WriteLine($"    - {m.Name} ({m.StudentCode}) - {m.Email} [Trạng thái: {m.Status}]");
+    memberCount = 2;
 }
 
-// [US03] Tạo Sự kiện cho CLB
-var ev = Event.Create(club.Id, "Workshop Lập trình C# hướng đối tượng", DateTime.Now.AddDays(7), 50, false);
-Console.WriteLine($"\n[US03] Đã tạo sự kiện: {ev.Title} | Sức chứa: {ev.Capacity} chỗ");
+var members = new List<Member>();
+for (int i = 1; i <= memberCount; i++)
+{
+    Console.WriteLine($"\nThành viên #{i}:");
+    Console.Write("  - Họ và tên: ");
+    string name = Console.ReadLine()?.Trim() ?? "";
+    if (string.IsNullOrWhiteSpace(name)) name = i == 1 ? "Nguyễn Văn An" : "Trần Thị Bình";
 
-// [US04] Đăng ký tham gia sự kiện và duyệt phiếu
+    Console.Write("  - Email: ");
+    string email = Console.ReadLine()?.Trim() ?? "";
+    if (string.IsNullOrWhiteSpace(email) || !email.Contains('@')) email = i == 1 ? "an.nguyen@dthu.edu.vn" : "binh.tran@dthu.edu.vn";
+
+    Console.Write("  - Mã số sinh viên (MSSV): ");
+    string code = Console.ReadLine()?.Trim() ?? "";
+    if (string.IsNullOrWhiteSpace(code)) code = i == 1 ? "DH24001" : "DH24002";
+
+    var m = Member.Create(name, email, code);
+    club.AddMember(m);
+    members.Add(m);
+    Console.WriteLine($"  -> Đã thêm thành công: {m.Name} ({m.StudentCode})");
+}
+
+// 3. Nhập thông tin sự kiện
+Console.WriteLine("\n--- [BƯỚC 3] TẠO SỰ KIỆN MỚI CHO CLB ---");
+Console.Write("Nhập tên sự kiện: ");
+string eventTitle = Console.ReadLine()?.Trim() ?? "";
+if (string.IsNullOrWhiteSpace(eventTitle)) eventTitle = "Workshop Lập trình C# hướng đối tượng";
+
+Console.Write("Nhập sức chứa tối đa (Capacity): ");
+if (!int.TryParse(Console.ReadLine(), out int capacity) || capacity <= 0)
+{
+    capacity = 50;
+}
+
+var ev = Event.Create(club.Id, eventTitle, DateTime.Now.AddDays(7), capacity, false);
+Console.WriteLine($"-> Đã tạo sự kiện: {ev.Title} | Sức chứa: {ev.Capacity} chỗ\n");
+
+// 4. Đăng ký tham gia sự kiện
+Console.WriteLine("--- [BƯỚC 4] ĐĂNG KÝ THAM GIA SỰ KIỆN ---");
 var registrations = new List<Registration>();
-
-if (ev.HasCapacity(registrations.Count))
+foreach (var m in members)
 {
-    var reg1 = Registration.Create(m1.Id, ev.Id);
-    reg1.Confirm();
-    registrations.Add(reg1);
-    Console.WriteLine($"[US04] Sinh viên {m1.Name} đã đăng ký -> Trạng thái: {reg1.Status}");
+    if (ev.HasCapacity(registrations.Count))
+    {
+        var reg = Registration.Create(m.Id, ev.Id);
+        reg.Confirm(); // Ban tổ chức duyệt xác nhận
+        registrations.Add(reg);
+        Console.WriteLine($"-> Sinh viên {m.Name} ({m.StudentCode}) đã đăng ký thành công [Trạng thái: {reg.Status}]");
+    }
 }
 
-if (ev.HasCapacity(registrations.Count))
-{
-    var reg2 = Registration.Create(m2.Id, ev.Id);
-    reg2.Confirm();
-    registrations.Add(reg2);
-    Console.WriteLine($"[US04] Sinh viên {m2.Name} đã đăng ký -> Trạng thái: {reg2.Status}");
-}
-
-// [US05] Điểm danh (Check-in) sử dụng hằng số CheckInMethod.QR
+// 5. Điểm danh sinh viên
+Console.WriteLine("\n--- [BƯỚC 5] ĐIỂM DANH SỰ KIỆN (CHECK-IN) ---");
 var checkIns = new List<CheckIn>();
-var checkIn1 = CheckIn.Create(registrations[0], CheckInMethod.QR);
-checkIns.Add(checkIn1);
-
-Console.WriteLine($"\n[US05] Điểm danh sự kiện: {m1.Name} đã điểm danh qua [{checkIn1.Method}] lúc {checkIn1.CheckedInAt:HH:mm:ss dd/MM/yyyy}");
-
-// Báo cáo tổng kết tham dự sự kiện
-Console.WriteLine("\n=== BÁO CÁO THAM DỰ SỰ KIỆN ===");
-Console.WriteLine($"Sự kiện: {ev.Title}");
-Console.WriteLine($"Số lượng đăng ký: {registrations.Count} | Đã check-in: {checkIns.Count}\n");
-
-var participants = new[]
+if (registrations.Count > 0)
 {
-    (Member: m1, Reg: registrations[0]),
-    (Member: m2, Reg: registrations[1])
-};
+    Console.WriteLine($"Tiến hành điểm danh cho: {members[0].Name} ({members[0].StudentCode})");
+    Console.Write("Chọn phương thức (1. Quét mã QR, 2. Thủ công) [Mặc định 1]: ");
+    string choice = Console.ReadLine()?.Trim() ?? "1";
+    string method = choice == "2" ? CheckInMethod.Manual : CheckInMethod.QR;
 
+    var checkIn = CheckIn.Create(registrations[0], method);
+    checkIns.Add(checkIn);
+    Console.WriteLine($"-> {checkIn.Summary()}\n");
+}
+
+// 6. In báo cáo tổng kết
+Console.WriteLine("==========================================================");
+Console.WriteLine($"   BÁO CÁO THAM DỰ SỰ KIỆN: {ev.Title.ToUpper()}");
+Console.WriteLine($"   Đơn vị: {club.Name} | Sức chứa: {ev.Capacity} chỗ");
+Console.WriteLine($"   Số đăng ký: {registrations.Count} | Đã check-in: {checkIns.Count}");
+Console.WriteLine("==========================================================");
 Console.WriteLine("{0,-10} | {1,-18} | {2,-12} | {3}", "MSSV", "Họ tên", "Trạng thái", "Điểm danh");
-Console.WriteLine(new string('-', 60));
+Console.WriteLine(new string('-', 58));
 
-foreach (var p in participants)
+for (int i = 0; i < members.Count; i++)
 {
-    var checkedIn = checkIns.Any(c => c.RegistrationId == p.Reg.Id);
-    var statusText = checkedIn ? $"Đã check-in ({CheckInMethod.QR})" : "Chưa check-in";
-    Console.WriteLine("{0,-10} | {1,-18} | {2,-12} | {3}", 
-        p.Member.StudentCode, 
-        p.Member.Name, 
-        p.Reg.Status, 
-        statusText);
-}
+    var m = members[i];
+    var reg = registrations.FirstOrDefault(r => r.MemberId == m.Id);
+    var regStatus = reg != null ? reg.Status.ToString() : "Chưa đăng ký";
+    var checkInRecord = reg != null ? checkIns.FirstOrDefault(c => c.RegistrationId == reg.Id) : null;
+    var checkInText = checkInRecord != null ? $"Đã check-in ({checkInRecord.Method})" : "Chưa check-in";
 
-// Kiểm tra thử nghiệm quy tắc nghiệp vụ (Business Rules)
-Console.WriteLine("\n=== KIỂM TRA QUY TẮC RÀNG BUỘC (VALIDATION TEST) ===");
-try
-{
-    // Thử tạo Member với email sai
-    Member.Create("Test Lỗi", "emailsai", "DH99999");
-}
-catch (ArgumentException ex)
-{
-    Console.WriteLine($"[Bắt lỗi hợp lệ]: {ex.Message}");
+    Console.WriteLine("{0,-10} | {1,-18} | {2,-12} | {3}", m.StudentCode, m.Name, regStatus, checkInText);
 }
 
-try
-{
-    // Thử thêm trùng thành viên vào CLB
-    club.AddMember(m1);
-}
-catch (InvalidOperationException ex)
-{
-    Console.WriteLine($"[Bắt lỗi hợp lệ]: {ex.Message}");
-}
-
-Console.WriteLine("\nHoàn tất chạy demo!");
+Console.WriteLine("==========================================================");
+Console.WriteLine("Chương trình hoàn tất!");
