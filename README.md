@@ -1,4 +1,4 @@
-# EduHub — Quản Lý Câu Lạc Bộ & Sự Kiện (Chương 1)
+# EduHub — Quản Lý Câu Lạc Bộ & Sự Kiện (Ch01)
 
 Dự án bài tập môn **Phát triển phần mềm hướng đối tượng (IN4211)** — Trường Đại học Đồng Tháp.
 
@@ -6,38 +6,29 @@ Dự án bài tập môn **Phát triển phần mềm hướng đối tượng (
 
 ## 1. Mô tả thiết kế Domain
 
-Hệ thống gồm 5 thực thể cốt lõi:
+Hệ thống mô hình hóa 5 thực thể cốt lõi:
 
-- **`Club`**: Quản lý thông tin câu lạc bộ và danh sách thành viên nội bộ qua phương thức `AddMember()` (chặn trùng MSSV).
-- **`Member`**: Lưu trữ thông tin sinh viên (Họ tên, Email, MSSV) và trạng thái hoạt động (`Active` / `Inactive`).
-- **`Event`**: Sự kiện trực thuộc một CLB (`ClubId`), quản lý số lượng sức chứa và hàm kiểm tra còn chỗ `HasCapacity()`.
+- **`Club`**: Quản lý câu lạc bộ và danh sách thành viên nội bộ qua `AddMember()` (kiểm tra không trùng MSSV).
+- **`Member`**: Lưu thông tin sinh viên (Họ tên, Email, MSSV) và trạng thái hoạt động (`Active` / `Inactive`).
+- **`Event`**: Sự kiện trực thuộc một CLB (`ClubId`), quản lý sức chứa tối đa và hàm kiểm tra còn chỗ `HasCapacity()`.
 - **`Registration`**: Phiếu đăng ký tham dự (bảng nối N-N giữa `Member` và `Event`), có trạng thái `Pending`, `Confirmed`, `Cancelled`.
-- **`CheckIn`**: Bản ghi điểm danh thực tế (quan hệ 1 - 0..1 với `Registration`), hỗ trợ phương thức quét `QR` hoặc thủ công `Manual`.
+- **`CheckIn`**: Bản ghi điểm danh tại sự kiện (quan hệ 1 - 0..1 với `Registration`), hỗ trợ hình thức `QR` và `Manual`.
 
-### Các nguyên tắc OOP áp dụng:
-- **Đóng gói (Encapsulation):** Tất cả properties dùng `{ get; private set; }`, constructor để `private`.
-- **Factory Method:** Khởi tạo đối tượng qua phương thức tĩnh `Create(...)` có kiểm tra hợp lệ dữ liệu (tên trống, email thiếu `@`, sức chứa $\le 0$).
-- **An toàn kiểu dữ liệu:** Dùng enum `MemberStatus`, `RegistrationStatus` và hằng số `CheckInMethod` thay vì chuỗi tự do.
-- **Sơ đồ lớp:** Xem chi tiết tại [`docs/class-diagram.md`](docs/class-diagram.md) hoặc mở tệp vẽ [`docs/class-diagram.drawio`](docs/class-diagram.drawio).
+> **Nguyên tắc OOP:** Thuộc tính dùng `private set`, constructor `private`, khởi tạo qua Static Factory `Create(...)` có kiểm tra tính hợp lệ dữ liệu. Sơ đồ lớp chi tiết xem tại [`docs/class-diagram.md`](docs/class-diagram.md).
 
 ---
 
-## 2. Hướng dẫn chạy ứng dụng
+## 2. Cách chạy ứng dụng
 
-### Yêu cầu:
-- Máy đã cài **.NET 10 SDK** (hoặc .NET 8 trở lên).
-
-### Lệnh chạy:
+Mở terminal tại thư mục dự án và chạy lệnh:
 ```bash
-cd EduHub.Ch01
 dotnet run
 ```
-
-Chương trình cho phép nhập trực tiếp thông tin từ bàn phím (hoặc nhấn **Enter** để dùng giá trị mẫu có sẵn).
+Chương trình cho phép nhập trực tiếp thông tin từ bàn phím (hoặc nhấn **Enter** để chọn nhanh giá trị mẫu).
 
 ---
 
-## 3. Kết quả chạy thực tế (Console Output)
+## 3. Kết quả chạy thực tế
 
 ```text
 ==========================================================
