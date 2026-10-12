@@ -42,7 +42,7 @@ for (int i = 1; i <= memberCount; i++)
 
     Console.Write("  - Mã số sinh viên (MSSV): ");
     string code = Console.ReadLine()?.Trim() ?? "";
-    if (string.IsNullOrWhiteSpace(code)) code = i == 1 ? "DH24001" : "DH24002";
+    if (string.IsNullOrWhiteSpace(code)) code = i == 1 ? "0024417926" : "0024417927";
 
     var m = Member.Create(name, email, code);
     club.AddMember(m);

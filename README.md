@@ -46,14 +46,14 @@ Nhập số lượng thành viên muốn thêm: 2
 Thành viên #1:
   - Họ và tên: Nguyễn Văn An
   - Email: an.nguyen@dthu.edu.vn
-  - Mã số sinh viên (MSSV): DH24001
-  -> Đã thêm thành công: Nguyễn Văn An (DH24001)
+  - Mã số sinh viên (MSSV): 0024417926
+  -> Đã thêm thành công: Nguyễn Văn An (0024417926)
 
 Thành viên #2:
   - Họ và tên: Trần Thị Bình
   - Email: binh.tran@dthu.edu.vn
-  - Mã số sinh viên (MSSV): DH24002
-  -> Đã thêm thành công: Trần Thị Bình (DH24002)
+  - Mã số sinh viên (MSSV): 0024417927
+  -> Đã thêm thành công: Trần Thị Bình (0024417927)
 
 --- [BƯỚC 3] TẠO SỰ KIỆN MỚI CHO CLB ---
 Nhập tên sự kiện: Workshop Lập trình C# hướng đối tượng
@@ -61,11 +61,11 @@ Nhập sức chứa tối đa (Capacity): 50
 -> Đã tạo sự kiện: Workshop Lập trình C# hướng đối tượng | Sức chứa: 50 chỗ
 
 --- [BƯỚC 4] ĐĂNG KÝ THAM GIA SỰ KIỆN ---
--> Sinh viên Nguyễn Văn An (DH24001) đã đăng ký thành công [Trạng thái: Confirmed]
--> Sinh viên Trần Thị Bình (DH24002) đã đăng ký thành công [Trạng thái: Confirmed]
+-> Sinh viên Nguyễn Văn An (0024417926) đã đăng ký thành công [Trạng thái: Confirmed]
+-> Sinh viên Trần Thị Bình (0024417927) đã đăng ký thành công [Trạng thái: Confirmed]
 
 --- [BƯỚC 5] ĐIỂM DANH SỰ KIỆN (CHECK-IN) ---
-Tiến hành điểm danh cho: Nguyễn Văn An (DH24001)
+Tiến hành điểm danh cho: Nguyễn Văn An (0024417926)
 Chọn phương thức (1. Quét mã QR, 2. Thủ công) [Mặc định 1]: 1
 -> [CheckIn #c11d01ed] Lúc 16:39:52 12/10/2026 qua [QR] (Phiếu #72a2a9e2)
 
@@ -76,8 +76,8 @@ Chọn phương thức (1. Quét mã QR, 2. Thủ công) [Mặc định 1]: 1
 ==========================================================
 MSSV       | Họ tên             | Trạng thái   | Điểm danh
 ----------------------------------------------------------
-DH24001    | Nguyễn Văn An      | Confirmed    | Đã check-in (QR)
-DH24002    | Trần Thị Bình      | Confirmed    | Chưa check-in
+0024417926 | Nguyễn Văn An      | Confirmed    | Đã check-in (QR)
+0024417927 | Trần Thị Bình      | Confirmed    | Chưa check-in
 ==========================================================
 Chương trình hoàn tất!
 ```
