@@ -1,45 +1,43 @@
 namespace EduHub.Ch01.Domain;
 
 /// <summary>
-/// Các phương thức điểm danh (check-in) được hệ thống EduHub hỗ trợ.
-/// Sử dụng hằng số để tránh magic string rải rác trong mã nguồn.
+/// Các hằng số định nghĩa hình thức điểm danh hợp lệ trong hệ thống.
 /// </summary>
 public static class CheckInMethod
 {
     /// <summary>
-    /// Điểm danh bằng cách quét mã QR trên ứng dụng/phiếu.
+    /// Điểm danh bằng quét mã QR.
     /// </summary>
     public const string QR = "QR";
 
     /// <summary>
-    /// Điểm danh thủ công bằng cách đối soát danh sách tại bàn lễ tân.
+    /// Điểm danh thủ công qua đối soát danh sách.
     /// </summary>
     public const string Manual = "Manual";
 }
 
 /// <summary>
-/// Đại diện cho một bản ghi Điểm danh (Check-in) tại sự kiện.
-/// Có quan hệ 1 - (0..1) với Phiếu đăng ký (Registration).
+/// Đại diện cho bản ghi Điểm danh (Check-in) của sinh viên tại sự kiện.
 /// </summary>
 public class CheckIn
 {
     /// <summary>
-    /// Khóa chính định danh duy nhất của lượt điểm danh (PK).
+    /// Mã định danh duy nhất của lượt điểm danh (Khóa chính).
     /// </summary>
     public Guid Id { get; private set; }
 
     /// <summary>
-    /// Khóa ngoại tham chiếu đến Phiếu đăng ký tương ứng (FK -> Registration.Id).
+    /// Khóa ngoại tham chiếu đến Phiếu đăng ký (RegistrationId).
     /// </summary>
     public Guid RegistrationId { get; private set; }
 
     /// <summary>
-    /// Thời điểm sinh viên được quét mã điểm danh thực tế.
+    /// Thời điểm sinh viên điểm danh thực tế.
     /// </summary>
     public DateTime CheckedInAt { get; private set; }
 
     /// <summary>
-    /// Hình thức điểm danh (QR, Manual...).
+    /// Hình thức điểm danh (sử dụng hằng số CheckInMethod.QR hoặc CheckInMethod.Manual).
     /// </summary>
     public string Method { get; private set; }
 
@@ -55,22 +53,17 @@ public class CheckIn
     }
 
     /// <summary>
-    /// Phương thức Factory tạo bản ghi điểm danh (Check-in).
-    /// Quy tắc nghiệp vụ: Bắt buộc truyền Registration hợp lệ và phiếu phải ở trạng thái Confirmed.
+    /// Factory method tạo bản ghi điểm danh với kiểm tra quy tắc nghiệp vụ: Chỉ phiếu Confirmed mới được phép check-in.
     /// </summary>
-    /// <param name="registration">Phiếu đăng ký của sinh viên tham dự sự kiện.</param>
-    /// <param name="method">Hình thức điểm danh (mặc định là Manual).</param>
+    /// <param name="registration">Phiếu đăng ký của sinh viên.</param>
+    /// <param name="method">Hình thức điểm danh (mặc định là CheckInMethod.Manual).</param>
     /// <returns>Đối tượng CheckIn hợp lệ.</returns>
-    /// <exception cref="ArgumentNullException">Ném ra khi đối tượng registration bị null.</exception>
-    /// <exception cref="InvalidOperationException">Ném ra khi phiếu đăng ký chưa được duyệt Confirmed.</exception>
     public static CheckIn Create(Registration registration, string method = CheckInMethod.Manual)
     {
         ArgumentNullException.ThrowIfNull(registration);
 
         if (registration.Status != RegistrationStatus.Confirmed)
-        {
-            throw new InvalidOperationException($"Chỉ phiếu đăng ký đã xác nhận (Confirmed) mới được phép check-in. Phiếu hiện tại đang ở trạng thái: {registration.Status}.");
-        }
+            throw new InvalidOperationException($"Chỉ phiếu đã duyệt (Confirmed) mới được phép check-in. Phiếu hiện tại: {registration.Status}.");
 
         var validMethod = string.IsNullOrWhiteSpace(method) ? CheckInMethod.Manual : method.Trim().ToUpperInvariant();
 
@@ -85,14 +78,10 @@ public class CheckIn
     /// <summary>
     /// Trả về chuỗi tóm tắt thông tin điểm danh.
     /// </summary>
-    /// <returns>Chuỗi thông tin tóm tắt.</returns>
-    public string Summary()
-    {
-        return $"[CheckIn #{Id.ToString()[..8]}] Đã điểm danh lúc {CheckedInAt:HH:mm:ss dd/MM/yyyy} qua phương thức [{Method}] (Phiếu #{RegistrationId.ToString()[..8]})";
-    }
+    public string Summary() => $"[CheckIn #{Id.ToString()[..8]}] Lúc {CheckedInAt:HH:mm:ss dd/MM/yyyy} qua [{Method}] (Phiếu #{RegistrationId.ToString()[..8]})";
 
     /// <summary>
-    /// Trả về chuỗi đại diện mô tả lượt check-in.
+    /// Trả về chuỗi đại diện cho lượt điểm danh.
     /// </summary>
     public override string ToString() => Summary();
 }

@@ -1,37 +1,37 @@
 namespace EduHub.Ch01.Domain;
 
 /// <summary>
-/// Đại diện cho một Sự kiện (workshop, hội thảo, cuộc thi...) do Câu lạc bộ tổ chức.
+/// Đại diện cho Sự kiện (workshop, hội thảo, cuộc thi) do Câu lạc bộ tổ chức.
 /// </summary>
 public class Event
 {
     /// <summary>
-    /// Khóa chính định danh duy nhất của Sự kiện (PK).
+    /// Mã định danh duy nhất của Sự kiện (Khóa chính).
     /// </summary>
     public Guid Id { get; private set; }
 
     /// <summary>
-    /// Khóa ngoại tham chiếu đến Câu lạc bộ tổ chức sự kiện (FK).
+    /// Khóa ngoại tham chiếu đến CLB tổ chức sự kiện.
     /// </summary>
     public Guid ClubId { get; private set; }
 
     /// <summary>
-    /// Tiêu đề hoặc tên của sự kiện.
+    /// Tiêu đề hoặc tên sự kiện.
     /// </summary>
     public string Title { get; private set; }
 
     /// <summary>
-    /// Thời gian dự kiến diễn ra sự kiện.
+    /// Thời gian dự kiến tổ chức sự kiện.
     /// </summary>
     public DateTime Date { get; private set; }
 
     /// <summary>
-    /// Sức chứa / Số lượng người tham dự tối đa cho phép.
+    /// Sức chứa tối đa (số người tham dự tối đa).
     /// </summary>
     public int Capacity { get; private set; }
 
     /// <summary>
-    /// Hình thức tổ chức: Trực tuyến (true) hoặc Trực tiếp tại giảng đường (false).
+    /// Hình thức tổ chức: Trực tuyến (true) hoặc Trực tiếp (false).
     /// </summary>
     public bool IsOnline { get; private set; }
 
@@ -49,32 +49,24 @@ public class Event
     }
 
     /// <summary>
-    /// Phương thức Factory khởi tạo Sự kiện với kiểm tra dữ liệu đầu vào nghiêm ngặt.
+    /// Factory method khởi tạo Sự kiện với kiểm tra hợp lệ dữ liệu đầu vào.
     /// </summary>
-    /// <param name="clubId">Mã định danh CLB tổ chức (không được rỗng).</param>
+    /// <param name="clubId">Mã CLB tổ chức (không được rỗng).</param>
     /// <param name="title">Tiêu đề sự kiện (không được rỗng).</param>
-    /// <param name="date">Thời gian tổ chức sự kiện.</param>
-    /// <param name="capacity">Sức chứa tối đa (phải lớn hơn 0).</param>
+    /// <param name="date">Thời gian tổ chức.</param>
+    /// <param name="capacity">Sức chứa tối đa (phải > 0).</param>
     /// <param name="isOnline">Tổ chức trực tuyến hay trực tiếp.</param>
     /// <returns>Đối tượng Event hợp lệ.</returns>
-    /// <exception cref="ArgumentException">Ném ra khi mã CLB rỗng hoặc tiêu đề bị để trống.</exception>
-    /// <exception cref="ArgumentOutOfRangeException">Ném ra khi sức chứa nhỏ hơn hoặc bằng 0.</exception>
     public static Event Create(Guid clubId, string title, DateTime date, int capacity, bool isOnline = false)
     {
         if (clubId == Guid.Empty)
-        {
-            throw new ArgumentException("Mã Câu lạc bộ tổ chức (ClubId) không được rỗng.", nameof(clubId));
-        }
+            throw new ArgumentException("Mã Câu lạc bộ (ClubId) không được để trống.", nameof(clubId));
 
         if (string.IsNullOrWhiteSpace(title))
-        {
             throw new ArgumentException("Tiêu đề sự kiện không được để trống.", nameof(title));
-        }
 
         if (capacity <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(capacity), "Sức chứa (Capacity) của sự kiện phải lớn hơn 0.");
-        }
+            throw new ArgumentOutOfRangeException(nameof(capacity), "Sức chứa sự kiện phải lớn hơn 0.");
 
         return new Event(
             id: Guid.NewGuid(),
@@ -87,18 +79,14 @@ public class Event
     }
 
     /// <summary>
-    /// Kiểm tra xem sự kiện còn chỗ trống cho người đăng ký mới hay không.
+    /// Kiểm tra xem sự kiện còn đủ chỗ trống cho người đăng ký mới hay không.
     /// </summary>
-    /// <param name="registeredCount">Số lượng sinh viên đã đăng ký hiện tại.</param>
-    /// <returns>True nếu số lượng đã đăng ký còn nhỏ hơn sức chứa tối đa, ngược lại False.</returns>
+    /// <param name="registeredCount">Số lượng sinh viên hiện đã đăng ký.</param>
+    /// <returns>True nếu còn chỗ, False nếu đã hết chỗ.</returns>
     public bool HasCapacity(int registeredCount) => registeredCount < Capacity;
 
     /// <summary>
     /// Trả về chuỗi đại diện mô tả Sự kiện.
     /// </summary>
-    public override string ToString()
-    {
-        var mode = IsOnline ? "Trực tuyến (Online)" : "Trực tiếp (Offline)";
-        return $"[Sự kiện] {Title} | Ngày: {Date:dd/MM/yyyy HH:mm} | Sức chứa: {Capacity} chỗ | Hình thức: {mode}";
-    }
+    public override string ToString() => $"[Sự kiện] {Title} ({Date:dd/MM/yyyy HH:mm}) - Sức chứa: {Capacity} chỗ";
 }
