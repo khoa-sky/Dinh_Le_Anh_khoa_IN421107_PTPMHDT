@@ -27,7 +27,7 @@ public class DomainTests
     [Fact(Skip = "TODO: viết test Club.Create với tên hợp lệ")]
     public void Club_Create_WithValidName_ReturnsClub()
     {
-        // Arrange
+        
 
         // Act
 
